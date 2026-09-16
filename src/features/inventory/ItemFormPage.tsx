@@ -8,6 +8,7 @@ import { itemRepository } from '@/repositories/itemRepository';
 import { tagRepository } from '@/repositories/tagRepository';
 import { inventoryService } from '@/services/inventoryService';
 import { useUndoToast } from '@/features/undo/UndoToastContext';
+import { TransactionHistory } from '@/features/inventory/TransactionHistory';
 
 export function ItemFormPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -209,6 +210,15 @@ export function ItemFormPage() {
           </button>
         )}
       </form>
+
+      {isEditing && itemId && (
+        <>
+          <div className="section-title">Verlauf</div>
+          <div className="card">
+            <TransactionHistory itemId={itemId} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

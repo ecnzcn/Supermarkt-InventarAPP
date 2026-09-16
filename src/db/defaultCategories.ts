@@ -26,4 +26,4 @@ export const DEFAULT_HOUSEHOLD_CATEGORIES: DefaultCategorySeed[] = [
   { name: 'Sonstiges', icon: '📦' },
 ];
 
-export const DEFAULT_LOCATIONS: string[] = ['Küche', 'Keller', 'Speisekammer', 'Bad'];
+export const DEFAULT_LOCATIONS: string[] = ['Küche', 'Keller', 'Speisekammer', 'Bad', 'Garage', 'Sonstiges'];

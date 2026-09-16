@@ -12,6 +12,7 @@ interface ToastState {
 interface ToastContextValue {
   showUndo: (message: string, transactionId: string) => void;
   showError: (message: string) => void;
+  showInfo: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -52,7 +53,11 @@ export function UndoToastProvider({ children }: { children: ReactNode }) {
     showToast({ message, tone: 'error' });
   }, [showToast]);
 
-  const value = useMemo(() => ({ showUndo, showError }), [showUndo, showError]);
+  const showInfo = useCallback((message: string) => {
+    showToast({ message, tone: 'default' });
+  }, [showToast]);
+
+  const value = useMemo(() => ({ showUndo, showError, showInfo }), [showUndo, showError, showInfo]);
 
   const handleAction = () => {
     toast?.onAction?.();

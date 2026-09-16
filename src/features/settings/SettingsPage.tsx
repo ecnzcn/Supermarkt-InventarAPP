@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
+import { seedDemoItems } from '@/db/demoData';
+import { useUndoToast } from '@/features/undo/UndoToastContext';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -9,6 +12,24 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 
 export function SettingsPage() {
   const [theme, setTheme] = useTheme();
+  const { showInfo, showError } = useUndoToast();
+  const [loadingDemo, setLoadingDemo] = useState(false);
+
+  async function handleLoadDemoData() {
+    setLoadingDemo(true);
+    try {
+      const result = await seedDemoItems();
+      if (result.created === 0) {
+        showInfo('Demo-Artikel sind bereits vorhanden.');
+      } else {
+        showInfo(`${result.created} Demo-Artikel hinzugefügt${result.skippedExisting > 0 ? ` (${result.skippedExisting} übersprungen)` : ''}.`);
+      }
+    } catch (error) {
+      showError(`Demo-Daten konnten nicht geladen werden: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoadingDemo(false);
+    }
+  }
 
   return (
     <div>
@@ -42,6 +63,14 @@ export function SettingsPage() {
           <span>Sicherung &amp; Wiederherstellung</span>
           <span aria-hidden="true">›</span>
         </Link>
+      </div>
+
+      <div className="section-title">Demo</div>
+      <div className="card">
+        <p>Füllt das Inventar mit realistischen Beispielartikeln (Mehl, Zucker, Waschmittel, …), um die App auszuprobieren.</p>
+        <button type="button" className="button button--secondary" onClick={handleLoadDemoData} disabled={loadingDemo}>
+          {loadingDemo ? 'Lädt…' : 'Demo-Daten laden'}
+        </button>
       </div>
     </div>
   );

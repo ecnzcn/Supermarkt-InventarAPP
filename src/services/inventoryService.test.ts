@@ -149,6 +149,23 @@ describe('inventoryService', () => {
     expect(transactions).toHaveLength(0);
   });
 
+  it('updates item fields without requiring more than a name', async () => {
+    const item = await inventoryService.createItem({
+      name: 'Honig',
+      categoryId: null,
+      locationId: null,
+      quantity: 1,
+      unit: 'Glas',
+      minimumQuantity: 0,
+    });
+
+    await inventoryService.updateItem(item.id, { notes: 'Bio', minimumQuantity: 1 });
+    const updated = await itemRepository.getById(item.id);
+    expect(updated?.notes).toBe('Bio');
+    expect(updated?.minimumQuantity).toBe(1);
+    expect(updated?.name).toBe('Honig');
+  });
+
   it('toggles favorite state', async () => {
     const item = await inventoryService.createItem({
       name: 'Dosentomaten',
