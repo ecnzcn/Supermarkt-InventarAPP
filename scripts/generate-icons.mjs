@@ -91,4 +91,7 @@ mkdirSync('public/icons', { recursive: true });
 const color = [28, 28, 30]; // matches theme_color
 writeFileSync('public/icons/icon-192.png', makePng(192, color, 36));
 writeFileSync('public/icons/icon-512.png', makePng(512, color, 96));
+// iOS Home Screen icon: Apple ignores manifest icons and looks for apple-touch-icon,
+// recommended at 180x180 for iPhone. No transparency/rounded corners (iOS masks it itself).
+writeFileSync('public/icons/apple-touch-icon.png', makePng(180, color, 0));
 console.log('Icons generated.');
