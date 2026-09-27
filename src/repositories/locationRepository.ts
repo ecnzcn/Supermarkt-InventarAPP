@@ -18,8 +18,17 @@ export const locationRepository = {
     await db.locations.update(id, changes);
   },
 
+  /**
+   * Deletes a location and cleans up references to it: items that pointed at it fall
+   * back to no location, and any sub-location that had it as a parent is promoted to
+   * top-level - so no Item or Location is ever left pointing at a deleted id.
+   */
   async delete(id: string): Promise<void> {
-    await db.locations.delete(id);
+    await db.transaction('rw', db.locations, db.items, async () => {
+      await db.locations.delete(id);
+      await db.items.where('locationId').equals(id).modify({ locationId: null });
+      await db.locations.where('parentId').equals(id).modify({ parentId: null });
+    });
   },
 
   async bulkPut(locations: Location[]): Promise<void> {
