@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { QuantityControl } from '@/components/QuantityControl';
 import { inventoryService } from '@/services/inventoryService';
+import { useUndoToast } from '@/features/undo/UndoToastContext';
 import type { EnrichedItem } from '@/types/views';
 
 interface ItemCardProps {
@@ -8,7 +9,16 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item }: ItemCardProps) {
+  const { showError } = useUndoToast();
   const metaParts = [item.category?.name, item.location?.name].filter(Boolean);
+
+  async function handleToggleFavorite() {
+    try {
+      await inventoryService.toggleFavorite(item.id);
+    } catch (error) {
+      showError(`Favorit konnte nicht geändert werden: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 
   return (
     <div className="item-card">
@@ -29,7 +39,7 @@ export function ItemCard({ item }: ItemCardProps) {
         type="button"
         className="favorite-toggle"
         aria-label={item.isFavorite ? 'Favorit entfernen' : 'Als Favorit markieren'}
-        onClick={() => inventoryService.toggleFavorite(item.id)}
+        onClick={handleToggleFavorite}
       >
         {item.isFavorite ? '⭐' : '☆'}
       </button>
