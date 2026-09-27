@@ -142,11 +142,49 @@ describe('inventoryService', () => {
     const { transaction } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
     expect((await itemRepository.getById(item.id))?.quantity).toBe(4);
 
-    await inventoryService.undoTransaction(transaction.id);
+    const result = await inventoryService.undoTransaction(transaction.id);
+    expect(result).toBe('undone');
     expect((await itemRepository.getById(item.id))?.quantity).toBe(5);
 
     const transactions = await transactionRepository.getByItemId(item.id);
     expect(transactions).toHaveLength(0);
+  });
+
+  it('rejects undo of a stale transaction without altering the current quantity', async () => {
+    const item = await inventoryService.createItem({
+      name: 'Zwiebeln',
+      categoryId: null,
+      locationId: null,
+      quantity: 10,
+      unit: 'Stk.',
+      minimumQuantity: 1,
+    });
+
+    // 10 -> 9
+    const { transaction: firstChange } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    // 9 -> 8
+    const { transaction: secondChange } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    expect((await itemRepository.getById(item.id))?.quantity).toBe(8);
+
+    // Undoing the older (now stale) transaction must be rejected, not silently apply
+    // its previousQuantity=10 snapshot over the current, more recent state.
+    const staleResult = await inventoryService.undoTransaction(firstChange.id);
+    expect(staleResult).toBe('stale');
+    expect((await itemRepository.getById(item.id))?.quantity).toBe(8);
+
+    // Both transactions must still be intact - nothing was deleted or overwritten.
+    const remaining = await transactionRepository.getByItemId(item.id);
+    expect(remaining.map((t) => t.id).sort()).toEqual([firstChange.id, secondChange.id].sort());
+
+    // The most recent transaction can still be undone normally.
+    const undoResult = await inventoryService.undoTransaction(secondChange.id);
+    expect(undoResult).toBe('undone');
+    expect((await itemRepository.getById(item.id))?.quantity).toBe(9);
+  });
+
+  it('reports "not-found" when undoing a transaction that no longer exists', async () => {
+    const result = await inventoryService.undoTransaction('does-not-exist');
+    expect(result).toBe('not-found');
   });
 
   it('updates item fields without requiring more than a name', async () => {

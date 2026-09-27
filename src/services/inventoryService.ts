@@ -18,6 +18,15 @@ export interface QuantityChangeResult {
   transaction: InventoryTransaction;
 }
 
+/**
+ * 'undone': reverted successfully.
+ * 'stale': rejected because the item's quantity no longer matches this transaction's
+ *          newQuantity, so the previousQuantity snapshot is outdated - reverting could
+ *          overwrite a more recent change. Nothing is modified.
+ * 'not-found': the transaction (or its item) no longer exists; nothing to undo.
+ */
+export type UndoResult = 'undone' | 'stale' | 'not-found';
+
 function clampQuantity(quantity: number): number {
   return Math.max(0, Math.round(quantity * 1000) / 1000);
 }
@@ -117,20 +126,32 @@ export const inventoryService = {
     });
   },
 
-  /** Reverts a specific quantity-change transaction, restoring the item's previous quantity. */
-  async undoTransaction(transactionId: string): Promise<void> {
-    await db.transaction('rw', db.items, db.transactions, async () => {
+  /**
+   * Reverts a specific quantity-change transaction, restoring the item's previous quantity.
+   *
+   * Only allowed while the item's current quantity still matches this transaction's
+   * `newQuantity` - i.e. nothing has changed the stock since. Otherwise a later change
+   * (another +/-, a direct edit, or a second undo) could be silently overwritten by
+   * reverting to a now-outdated snapshot, so the undo is rejected instead.
+   */
+  async undoTransaction(transactionId: string): Promise<UndoResult> {
+    return db.transaction('rw', db.items, db.transactions, async () => {
       const transaction = await db.transactions.get(transactionId);
-      if (!transaction) return;
+      if (!transaction) return 'not-found';
 
       const item = await db.items.get(transaction.itemId);
       if (!item) {
         await db.transactions.delete(transactionId);
-        return;
+        return 'not-found';
+      }
+
+      if (item.quantity !== transaction.newQuantity) {
+        return 'stale';
       }
 
       await db.items.put({ ...item, quantity: transaction.previousQuantity, updatedAt: Date.now() });
       await db.transactions.delete(transactionId);
+      return 'undone';
     });
   },
 };

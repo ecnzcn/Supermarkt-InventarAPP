@@ -36,19 +36,6 @@ export function UndoToastProvider({ children }: { children: ReactNode }) {
     timeoutRef.current = setTimeout(dismiss, AUTO_DISMISS_MS);
   }, [dismiss]);
 
-  const showUndo = useCallback((message: string, transactionId: string) => {
-    showToast({
-      message,
-      tone: 'default',
-      actionLabel: 'Rückgängig',
-      onAction: () => {
-        inventoryService.undoTransaction(transactionId).catch((error) => {
-          console.error('Rückgängig machen fehlgeschlagen', error);
-        });
-      },
-    });
-  }, [showToast]);
-
   const showError = useCallback((message: string) => {
     showToast({ message, tone: 'error' });
   }, [showToast]);
@@ -56,6 +43,25 @@ export function UndoToastProvider({ children }: { children: ReactNode }) {
   const showInfo = useCallback((message: string) => {
     showToast({ message, tone: 'default' });
   }, [showToast]);
+
+  const showUndo = useCallback((message: string, transactionId: string) => {
+    showToast({
+      message,
+      tone: 'default',
+      actionLabel: 'Rückgängig',
+      onAction: () => {
+        inventoryService.undoTransaction(transactionId).then((result) => {
+          if (result === 'stale') {
+            showError('Rückgängig nicht möglich: Der Bestand wurde inzwischen erneut geändert.');
+          } else if (result === 'not-found') {
+            showError('Rückgängig nicht möglich: Die Änderung wurde bereits verarbeitet.');
+          }
+        }).catch((error) => {
+          showError(`Rückgängig machen fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`);
+        });
+      },
+    });
+  }, [showToast, showError]);
 
   const value = useMemo(() => ({ showUndo, showError, showInfo }), [showUndo, showError, showInfo]);
 
