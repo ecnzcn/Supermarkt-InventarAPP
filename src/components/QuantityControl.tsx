@@ -23,7 +23,9 @@ export function QuantityControl({ itemId, itemName, quantity, unit }: QuantityCo
       return;
     }
     try {
-      const { transaction } = await inventoryService.adjustQuantity(itemId, delta, reason);
+      const result = await inventoryService.adjustQuantity(itemId, delta, reason);
+      if (!result) return; // no real change (e.g. already at 0) - nothing to announce or undo
+      const { transaction } = result;
       showUndo(`${itemName}: ${transaction.previousQuantity} → ${transaction.newQuantity} ${unit}`, transaction.id);
     } catch (error) {
       showError(`Menge konnte nicht geändert werden: ${error instanceof Error ? error.message : String(error)}`);
@@ -41,7 +43,9 @@ export function QuantityControl({ itemId, itemName, quantity, unit }: QuantityCo
     const parsed = Number(draft.replace(',', '.'));
     if (!Number.isFinite(parsed) || parsed === quantity) return;
     try {
-      const { transaction } = await inventoryService.setQuantity(itemId, parsed);
+      const result = await inventoryService.setQuantity(itemId, parsed);
+      if (!result) return; // value unchanged - nothing to announce or undo
+      const { transaction } = result;
       showUndo(`${itemName}: ${transaction.previousQuantity} → ${transaction.newQuantity} ${unit}`, transaction.id);
     } catch (error) {
       showError(`Menge konnte nicht geändert werden: ${error instanceof Error ? error.message : String(error)}`);

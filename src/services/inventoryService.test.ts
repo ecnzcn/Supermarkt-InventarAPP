@@ -1,8 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/db/database';
-import { inventoryService } from '@/services/inventoryService';
+import { inventoryService, type QuantityChangeResult } from '@/services/inventoryService';
 import { itemRepository } from '@/repositories/itemRepository';
 import { transactionRepository } from '@/repositories/transactionRepository';
+
+/** Unwraps a quantity-change call expected to represent a real change, not a no-op. */
+async function expectChange(promise: Promise<QuantityChangeResult | null>): Promise<QuantityChangeResult> {
+  const result = await promise;
+  if (!result) throw new Error('Expected a real quantity change, but the call was a no-op.');
+  return result;
+}
 
 beforeEach(async () => {
   await db.transaction('rw', db.items, db.transactions, db.itemTags, async () => {
@@ -38,7 +45,7 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { item: updated, transaction } = await inventoryService.adjustQuantity(item.id, 1, 'purchase');
+    const { item: updated, transaction } = await expectChange(inventoryService.adjustQuantity(item.id, 1, 'purchase'));
 
     expect(updated.quantity).toBe(3);
     expect(transaction.previousQuantity).toBe(2);
@@ -60,7 +67,7 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { item: updated, transaction } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    const { item: updated, transaction } = await expectChange(inventoryService.adjustQuantity(item.id, -1, 'consumption'));
 
     expect(updated.quantity).toBe(2);
     expect(transaction.reason).toBe('consumption');
@@ -76,12 +83,46 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { item: updated, transaction } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    const result = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
 
-    expect(updated.quantity).toBe(0);
-    expect(transaction.previousQuantity).toBe(0);
+    // Quantity stays clamped at 0, but no-op 0->0 changes must not be written at all
+    // (see 2A-4: they carry no information and would pollute the transaction history).
+    expect(result).toBeNull();
+    expect((await itemRepository.getById(item.id))?.quantity).toBe(0);
+    expect(await transactionRepository.getByItemId(item.id)).toHaveLength(0);
+  });
+
+  it('going from 1 to 0 still records exactly one real transaction', async () => {
+    const item = await inventoryService.createItem({
+      name: 'Butter',
+      categoryId: null,
+      locationId: null,
+      quantity: 1,
+      unit: 'Stk.',
+      minimumQuantity: 1,
+    });
+
+    const { transaction } = await expectChange(inventoryService.adjustQuantity(item.id, -1, 'consumption'));
+    expect(transaction.previousQuantity).toBe(1);
     expect(transaction.newQuantity).toBe(0);
-    expect(transaction.delta).toBe(0);
+    expect(transaction.delta).toBe(-1);
+    expect((await itemRepository.getById(item.id))?.quantity).toBe(0);
+    expect(await transactionRepository.getByItemId(item.id)).toHaveLength(1);
+  });
+
+  it('does not record a transaction when setQuantity is given the current value', async () => {
+    const item = await inventoryService.createItem({
+      name: 'Senf',
+      categoryId: null,
+      locationId: null,
+      quantity: 2,
+      unit: 'Gläser',
+      minimumQuantity: 1,
+    });
+
+    const result = await inventoryService.setQuantity(item.id, 2);
+    expect(result).toBeNull();
+    expect(await transactionRepository.getByItemId(item.id)).toHaveLength(0);
   });
 
   it('supports direct quantity editing via setQuantity', async () => {
@@ -94,7 +135,7 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { item: updated } = await inventoryService.setQuantity(item.id, 10);
+    const { item: updated } = await expectChange(inventoryService.setQuantity(item.id, 10));
     expect(updated.quantity).toBe(10);
   });
 
@@ -108,7 +149,7 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { item: updated } = await inventoryService.setQuantity(item.id, -3);
+    const { item: updated } = await expectChange(inventoryService.setQuantity(item.id, -3));
     expect(updated.quantity).toBe(0);
   });
 
@@ -139,7 +180,7 @@ describe('inventoryService', () => {
       minimumQuantity: 1,
     });
 
-    const { transaction } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    const { transaction } = await expectChange(inventoryService.adjustQuantity(item.id, -1, 'consumption'));
     expect((await itemRepository.getById(item.id))?.quantity).toBe(4);
 
     const result = await inventoryService.undoTransaction(transaction.id);
@@ -161,9 +202,9 @@ describe('inventoryService', () => {
     });
 
     // 10 -> 9
-    const { transaction: firstChange } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    const { transaction: firstChange } = await expectChange(inventoryService.adjustQuantity(item.id, -1, 'consumption'));
     // 9 -> 8
-    const { transaction: secondChange } = await inventoryService.adjustQuantity(item.id, -1, 'consumption');
+    const { transaction: secondChange } = await expectChange(inventoryService.adjustQuantity(item.id, -1, 'consumption'));
     expect((await itemRepository.getById(item.id))?.quantity).toBe(8);
 
     // Undoing the older (now stale) transaction must be rejected, not silently apply

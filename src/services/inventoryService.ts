@@ -70,16 +70,21 @@ export const inventoryService = {
   /**
    * Atomically applies a quantity delta and logs the resulting transaction.
    * Quantity is floored at zero, matching the app's zero-boundary rule.
+   *
+   * Returns null - writing nothing - when the delta doesn't actually change the
+   * quantity (e.g. pressing "-" while already at 0), so no-op 0->0 transactions
+   * never pollute the history.
    */
-  async adjustQuantity(itemId: string, delta: number, reason: TransactionReason = 'adjustment'): Promise<QuantityChangeResult> {
+  async adjustQuantity(itemId: string, delta: number, reason: TransactionReason = 'adjustment'): Promise<QuantityChangeResult | null> {
     return db.transaction('rw', db.items, db.transactions, async () => {
       const item = await db.items.get(itemId);
       if (!item) throw new Error(`Item ${itemId} not found`);
 
       const previousQuantity = item.quantity;
       const newQuantity = clampQuantity(previousQuantity + delta);
-      const now = Date.now();
+      if (newQuantity === previousQuantity) return null;
 
+      const now = Date.now();
       const updatedItem: Item = { ...item, quantity: newQuantity, updatedAt: now };
       await db.items.put(updatedItem);
 
@@ -98,16 +103,20 @@ export const inventoryService = {
     });
   },
 
-  /** Sets the quantity directly (used for tap-to-edit), logging an adjustment transaction. */
-  async setQuantity(itemId: string, quantity: number): Promise<QuantityChangeResult> {
+  /**
+   * Sets the quantity directly (used for tap-to-edit), logging an adjustment transaction.
+   * Returns null - writing nothing - when the new value equals the current quantity.
+   */
+  async setQuantity(itemId: string, quantity: number): Promise<QuantityChangeResult | null> {
     return db.transaction('rw', db.items, db.transactions, async () => {
       const item = await db.items.get(itemId);
       if (!item) throw new Error(`Item ${itemId} not found`);
 
       const previousQuantity = item.quantity;
       const newQuantity = clampQuantity(quantity);
-      const now = Date.now();
+      if (newQuantity === previousQuantity) return null;
 
+      const now = Date.now();
       const updatedItem: Item = { ...item, quantity: newQuantity, updatedAt: now };
       await db.items.put(updatedItem);
 
