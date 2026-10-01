@@ -10,6 +10,11 @@ export const transactionRepository = {
     return db.transactions.where('itemId').equals(itemId).reverse().sortBy('timestamp');
   },
 
+  /** All transactions at or after `timestamp` (uses the timestamp index). */
+  async getSince(timestamp: number): Promise<InventoryTransaction[]> {
+    return db.transactions.where('timestamp').aboveOrEqual(timestamp).toArray();
+  },
+
   async create(transaction: InventoryTransaction): Promise<void> {
     await db.transactions.add(transaction);
   },

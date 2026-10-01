@@ -9,6 +9,8 @@ import { tagRepository } from '@/repositories/tagRepository';
 import { inventoryService } from '@/services/inventoryService';
 import { useUndoToast } from '@/features/undo/UndoToastContext';
 import { TransactionHistory } from '@/features/inventory/TransactionHistory';
+import { ConsumptionStatsCard } from '@/features/consumption/ConsumptionStatsCard';
+import { useConsumptionStats } from '@/hooks/useConsumptionStats';
 
 export function ItemFormPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -21,6 +23,8 @@ export function ItemFormPage() {
   const allTags = useTags();
   const existingItem = useLiveQuery(() => (itemId ? itemRepository.getById(itemId) : undefined), [itemId]);
   const existingItemTags = useLiveQuery(() => (itemId ? tagRepository.getTagsForItem(itemId) : undefined), [itemId]);
+
+  const consumptionStats = useConsumptionStats(existingItem ?? undefined);
 
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -210,6 +214,15 @@ export function ItemFormPage() {
           </button>
         )}
       </form>
+
+      {isEditing && itemId && existingItem && (
+        <>
+          <div className="section-title">Verbrauch</div>
+          <div className="card">
+            <ConsumptionStatsCard stats={consumptionStats} unit={existingItem.unit} />
+          </div>
+        </>
+      )}
 
       {isEditing && itemId && (
         <>

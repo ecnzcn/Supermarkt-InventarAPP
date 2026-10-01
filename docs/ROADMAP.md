@@ -28,6 +28,16 @@
       Hinzufügen zum Home-Bildschirm nötig
 - [x] Versions- und Build-Anzeige in den Einstellungen, manueller Update-Check
 
+## v1.2.0
+
+- [x] Verbrauchsstatistik je Artikel (Detailseite → „Verbrauch“): Verbrauch pro Woche/Monat
+      und Prognose „Reicht noch ca. …“ aus den letzten 90 Tagen des Verlaufs
+- [x] Dashboard-Bereich „Geht bald aus“: Artikel über Mindestbestand, die laut Prognose
+      in ≤ 14 Tagen leer sind
+- Regeln: Als Verbrauch zählen „−“ und das direkte Herabsetzen der Menge; rückgängig
+  gemachte Änderungen zählen nicht. Prognose erst ab ≥ 2 Verbrauchsereignissen über
+  ≥ 7 Tage (`src/services/consumptionStatsService.ts`).
+
 ## Bewusst nicht in v1.0
 
 Benutzerkonten, Cloud-Synchronisation, Multi-User, Barcode-Scanning, OCR/Rechnungs-
