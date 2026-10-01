@@ -11,6 +11,10 @@ import { useUndoToast } from '@/features/undo/UndoToastContext';
 import { TransactionHistory } from '@/features/inventory/TransactionHistory';
 import { ConsumptionStatsCard } from '@/features/consumption/ConsumptionStatsCard';
 import { useConsumptionStats } from '@/hooks/useConsumptionStats';
+import { DEFAULT_UNIT, PREDEFINED_UNITS, UNIT_GROUPS } from '@/constants/units';
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from '@/utils/numberInput';
+
+const CUSTOM_UNIT = '__custom__';
 
 export function ItemFormPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -30,7 +34,8 @@ export function ItemFormPage() {
   const [categoryId, setCategoryId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [quantity, setQuantity] = useState('0');
-  const [unit, setUnit] = useState('Stk.');
+  const [unit, setUnit] = useState(DEFAULT_UNIT);
+  const [customUnitMode, setCustomUnitMode] = useState(false);
   const [minimumQuantity, setMinimumQuantity] = useState('0');
   const [notes, setNotes] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -42,9 +47,10 @@ export function ItemFormPage() {
       setName(existingItem.name);
       setCategoryId(existingItem.categoryId ?? '');
       setLocationId(existingItem.locationId ?? '');
-      setQuantity(String(existingItem.quantity));
+      setQuantity(formatDecimalInput(existingItem.quantity));
       setUnit(existingItem.unit);
-      setMinimumQuantity(String(existingItem.minimumQuantity));
+      setCustomUnitMode(!PREDEFINED_UNITS.includes(existingItem.unit));
+      setMinimumQuantity(formatDecimalInput(existingItem.minimumQuantity));
       setNotes(existingItem.notes);
       setIsFavorite(existingItem.isFavorite);
     }
@@ -88,9 +94,9 @@ export function ItemFormPage() {
         name: name.trim(),
         categoryId: categoryId || null,
         locationId: locationId || null,
-        quantity: Number(quantity) || 0,
-        unit: unit.trim() || 'Stk.',
-        minimumQuantity: Number(minimumQuantity) || 0,
+        quantity: parseDecimalInput(quantity),
+        unit: unit.trim() || DEFAULT_UNIT,
+        minimumQuantity: parseDecimalInput(minimumQuantity),
         isFavorite,
         notes,
       };
@@ -143,23 +149,69 @@ export function ItemFormPage() {
         <div className="form-row">
           <div className="form-field">
             <label htmlFor="item-quantity">Menge</label>
-            <input id="item-quantity" type="number" min={0} step="0.1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            <input
+              id="item-quantity"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              enterKeyHint="next"
+              value={quantity}
+              onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
+              onFocus={(e) => e.target.select()}
+            />
           </div>
           <div className="form-field">
             <label htmlFor="item-unit">Einheit</label>
-            <input id="item-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Stk., Packungen, …" />
+            <select
+              id="item-unit"
+              value={customUnitMode ? CUSTOM_UNIT : unit}
+              onChange={(e) => {
+                if (e.target.value === CUSTOM_UNIT) {
+                  setCustomUnitMode(true);
+                  setUnit('');
+                } else {
+                  setCustomUnitMode(false);
+                  setUnit(e.target.value);
+                }
+              }}
+            >
+              {UNIT_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.units.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+              <option value={CUSTOM_UNIT}>Eigene Einheit …</option>
+            </select>
           </div>
         </div>
+
+        {customUnitMode && (
+          <div className="form-field">
+            <label htmlFor="item-unit-custom">Eigene Einheit</label>
+            <input
+              id="item-unit-custom"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="z. B. Netz, Bund, Kiste"
+              maxLength={20}
+            />
+          </div>
+        )}
 
         <div className="form-field">
           <label htmlFor="item-min">Mindestbestand</label>
           <input
             id="item-min"
-            type="number"
-            min={0}
-            step="0.1"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
             value={minimumQuantity}
-            onChange={(e) => setMinimumQuantity(e.target.value)}
+            onChange={(e) => setMinimumQuantity(sanitizeDecimalInput(e.target.value))}
+            onFocus={(e) => e.target.select()}
           />
         </div>
 

@@ -34,9 +34,15 @@
       und Prognose „Reicht noch ca. …“ aus den letzten 90 Tagen des Verlaufs
 - [x] Dashboard-Bereich „Geht bald aus“: Artikel über Mindestbestand, die laut Prognose
       in ≤ 14 Tagen leer sind
-- Regeln: Als Verbrauch zählen „−“ und das direkte Herabsetzen der Menge; rückgängig
-  gemachte Änderungen zählen nicht. Prognose erst ab ≥ 2 Verbrauchsereignissen über
+- Regeln: Als Verbrauch zählt nur „−“. Direkt eingetippte Mengen gelten als Korrektur
+  und zählen nicht, rückgängig gemachte Änderungen ebenfalls nicht. Prognose erst ab ≥ 2 Verbrauchsereignissen über
   ≥ 7 Tage (`src/services/consumptionStatsService.ts`).
+
+## v1.2.1
+
+- [x] Verbrauchsstatistik zählt nur noch „−“ (Korrekturen per Direkteingabe nicht)
+- [x] Menge und Mindestbestand: Zahlenblock, nur Zahlen (optional mit Komma) möglich
+- [x] Einheit als Auswahlliste (Stk., Packungen, Flaschen, kg, l, …) plus „Eigene Einheit …“
 
 ## Bewusst nicht in v1.0
 

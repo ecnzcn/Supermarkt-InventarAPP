@@ -33,10 +33,15 @@ describe('computeConsumptionStats', () => {
     expect(stats.emptyOn).toBe(NOW + 10 * DAY_MS);
   });
 
-  it('counts lowering the quantity directly as consumption, but not increases or purchases', () => {
-    const txs = [tx(10, -2, 'adjustment'), tx(5, 3, 'adjustment'), tx(4, 4, 'purchase'), tx(2, -2, 'consumption')];
+  it('counts only "−" as consumption – direct corrections and purchases are ignored', () => {
+    const txs = [tx(10, -1, 'consumption'), tx(8, -5, 'adjustment'), tx(5, 3, 'adjustment'), tx(4, 4, 'purchase'), tx(2, -2, 'consumption')];
     const stats = computeConsumptionStats(txs, 4, NOW);
-    expect(stats.status === 'ok' && stats.consumedTotal).toBe(4);
+    expect(stats.status === 'ok' && stats.consumedTotal).toBe(3);
+  });
+
+  it('does not forecast from corrections alone', () => {
+    const txs = [tx(14, -3, 'adjustment'), tx(7, -3, 'adjustment')];
+    expect(computeConsumptionStats(txs, 4, NOW)).toEqual({ status: 'no-consumption' });
   });
 
   it('ignores transactions older than 90 days', () => {

@@ -26,12 +26,12 @@ export type ConsumptionStats =
     };
 
 /**
- * Counts a negative change as consumption: "−" (consumption) as well as lowering the
- * quantity by tapping the number (adjustment). Undone changes are deleted from the log
- * by inventoryService.undoTransaction, so they never show up here.
+ * Only the "−" button counts as consumption. Typing a new quantity (adjustment) is
+ * treated as a correction of the count and deliberately ignored. Undone changes are
+ * deleted from the log by inventoryService.undoTransaction, so they never show up here.
  */
 export function isConsumption(tx: InventoryTransaction): boolean {
-  return tx.delta < 0 && (tx.reason === 'consumption' || tx.reason === 'adjustment');
+  return tx.delta < 0 && tx.reason === 'consumption';
 }
 
 /** Pure calculation from one item's transactions – no database access. */
