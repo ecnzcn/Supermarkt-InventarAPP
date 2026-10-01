@@ -9,24 +9,32 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 import { CategoriesSettingsPage } from '@/features/settings/CategoriesSettingsPage';
 import { LocationsSettingsPage } from '@/features/settings/LocationsSettingsPage';
 import { BackupSettingsPage } from '@/features/settings/BackupSettingsPage';
+import { PwaUpdateBanner } from '@/features/pwa-update/PwaUpdateBanner';
+import { PwaUpdateContext } from '@/features/pwa-update/PwaUpdateContext';
+import { usePwaUpdate } from '@/features/pwa-update/usePwaUpdate';
 
 export default function App() {
+  const pwaUpdate = usePwaUpdate();
+
   return (
     <ErrorBoundary>
-      <UndoToastProvider>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/inventory/new" element={<ItemFormPage />} />
-            <Route path="/inventory/:itemId/edit" element={<ItemFormPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/settings/categories" element={<CategoriesSettingsPage />} />
-            <Route path="/settings/locations" element={<LocationsSettingsPage />} />
-            <Route path="/settings/backup" element={<BackupSettingsPage />} />
-          </Route>
-        </Routes>
-      </UndoToastProvider>
+      <PwaUpdateContext.Provider value={pwaUpdate}>
+        <PwaUpdateBanner needRefresh={pwaUpdate.needRefresh} onUpdate={pwaUpdate.updateNow} onDismiss={pwaUpdate.dismiss} />
+        <UndoToastProvider>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/inventory/new" element={<ItemFormPage />} />
+              <Route path="/inventory/:itemId/edit" element={<ItemFormPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/categories" element={<CategoriesSettingsPage />} />
+              <Route path="/settings/locations" element={<LocationsSettingsPage />} />
+              <Route path="/settings/backup" element={<BackupSettingsPage />} />
+            </Route>
+          </Routes>
+        </UndoToastProvider>
+      </PwaUpdateContext.Provider>
     </ErrorBoundary>
   );
 }

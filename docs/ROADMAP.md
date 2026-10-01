@@ -21,6 +21,13 @@
 - [x] PWA: Manifest, Icons, Service Worker, Offline-Betrieb nach erstem Laden
 - [x] Demo-/Seed-Datensatz für realistische UI-Tests
 
+## v1.1.0
+
+- [x] Automatische Update-Erkennung (auch beim Fortsetzen der iOS-Home-Bildschirm-App)
+- [x] Hinweis „Neue Version verfügbar“ mit „Aktualisieren“/„Später“ – kein erneutes
+      Hinzufügen zum Home-Bildschirm nötig
+- [x] Versions- und Build-Anzeige in den Einstellungen, manueller Update-Check
+
 ## Bewusst nicht in v1.0
 
 Benutzerkonten, Cloud-Synchronisation, Multi-User, Barcode-Scanning, OCR/Rechnungs-

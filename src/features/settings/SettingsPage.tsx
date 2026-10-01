@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { seedDemoItems } from '@/db/demoData';
 import { useUndoToast } from '@/features/undo/UndoToastContext';
+import { usePwaUpdateState } from '@/features/pwa-update/PwaUpdateContext';
+import { APP_BUILD, APP_VERSION } from '@/constants/appVersion';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -14,6 +16,22 @@ export function SettingsPage() {
   const [theme, setTheme] = useTheme();
   const { showInfo, showError } = useUndoToast();
   const [loadingDemo, setLoadingDemo] = useState(false);
+  const { checkNow } = usePwaUpdateState();
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  async function handleCheckForUpdate() {
+    setCheckingUpdate(true);
+    try {
+      const result = await checkNow();
+      if (result === 'up-to-date') showInfo('Vorrat ist auf dem neuesten Stand.');
+      else if (result === 'update-found') showInfo('Neue Version gefunden – sie wird geladen.');
+      else showInfo('Update-Prüfung ist hier nicht verfügbar (nur in der installierten App).');
+    } catch (error) {
+      showError(`Update-Prüfung fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  }
 
   async function handleLoadDemoData() {
     setLoadingDemo(true);
@@ -72,6 +90,20 @@ export function SettingsPage() {
           {loadingDemo ? 'Lädt…' : 'Demo-Daten laden'}
         </button>
       </div>
+
+      <div className="section-title">App</div>
+      <div className="card">
+        <p>
+          Updates werden automatisch geladen, sobald du die App öffnest. Ist eine neue Version
+          bereit, erscheint oben ein Hinweis.
+        </p>
+        <button type="button" className="button button--secondary" onClick={handleCheckForUpdate} disabled={checkingUpdate}>
+          {checkingUpdate ? 'Prüft…' : 'Nach Updates suchen'}
+        </button>
+      </div>
+      <p className="app-version">
+        Version {APP_VERSION} · Build {APP_BUILD}
+      </p>
     </div>
   );
 }

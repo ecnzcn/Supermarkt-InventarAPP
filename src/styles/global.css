@@ -685,3 +685,70 @@ textarea {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
+/* PWA update hint – stays until the user decides (unlike the auto-dismissing toast). */
+.update-banner {
+  position: fixed;
+  top: calc(var(--safe-area-inset-top) + var(--space-2));
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: var(--space-3) var(--space-4);
+}
+
+.update-banner__text {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.update-banner__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.update-banner__subtitle {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.update-banner__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.update-banner__button {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px;
+}
+
+.update-banner__button:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 900px) {
+  .update-banner {
+    left: auto;
+    right: var(--space-5);
+    top: var(--space-5);
+    max-width: 420px;
+  }
+}
+
+.app-version {
+  margin: var(--space-5) 0 var(--space-4);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}

@@ -80,7 +80,23 @@ ganz ohne manuelles State-Management oder einen globalen Store.
 ## PWA / Offline-Konzept
 
 - `vite-plugin-pwa` generiert Manifest, Service Worker und Precaching der
-  Build-Artefakte (`generateSW`-Modus, `registerType: 'autoUpdate'`).
+  Build-Artefakte (`generateSW`-Modus, `registerType: 'prompt'`, `injectRegister: false`).
+
+### Updates & Versionierung (ab v1.1.0)
+
+- Der Service Worker wird genau einmal in `src/features/pwa-update/usePwaUpdate.ts`
+  registriert (einzige Stelle, die `virtual:pwa-register/react` importiert).
+- iOS setzt eine Home-Bildschirm-App meist nur fort, statt sie neu zu laden – dadurch
+  würde der Browser nie nach Updates suchen. `updateChecks.ts` prüft deshalb bei jeder
+  Rückkehr in den Vordergrund (`visibilitychange`) und stündlich, solange die App offen ist.
+- Liegt eine neue Version bereit, zeigt `PwaUpdateBanner` „Neue Version verfügbar“ mit
+  „Aktualisieren“/„Später“. „Aktualisieren“ aktiviert den wartenden Service Worker und
+  lädt neu; IndexedDB-Daten bleiben unberührt. Die App muss **nicht** erneut zum
+  Home-Bildschirm hinzugefügt werden.
+- Versionsanzeige in den Einstellungen: `Version <package.json> · Build <Commit-SHA>`
+  (über Vite-`define`, Quelle `src/constants/appVersion.ts`). Für ein Release
+  `version` in `package.json` erhöhen; der Build-SHA kommt automatisch aus GitHub Actions.
+- Manueller Check: Einstellungen → „Nach Updates suchen“.
 - Da alle Daten in IndexedDB liegen (nicht im Netzwerk-Cache), funktionieren Lesen und
   Schreiben von Artikeln, Mengenänderungen und Transaktionen vollständig offline,
   sobald die App einmal geladen wurde.
