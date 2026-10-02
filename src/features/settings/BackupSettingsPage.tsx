@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom';
 import { backupService, getBackupFilename } from '@/services/backupService';
 import type { ImportAnalysis, ImportConflictStrategy, ImportResult } from '@/services/backupTypes';
 import { useUndoToast } from '@/features/undo/UndoToastContext';
+import { REMINDER_OPTIONS, backupReminderStore, saveBackup } from '@/services/dataSafetyService';
+import { useBackupReminder } from '@/hooks/useBackupReminder';
+import { usePersistenceStatus } from '@/hooks/usePersistenceStatus';
+import { formatDate } from '@/utils/formatConsumption';
+
+const PERSISTENCE_LABELS = {
+  persisted: 'Dauerhaft – das System löscht die Daten nicht automatisch.',
+  'not-persisted': 'Nicht garantiert – regelmäßige Sicherungen sind besonders wichtig.',
+  unsupported: 'Unbekannt – dieser Browser meldet den Speicherstatus nicht.',
+} as const;
 
 const COUNT_LABELS: Record<string, string> = {
   items: 'Artikel',
@@ -14,7 +24,9 @@ const COUNT_LABELS: Record<string, string> = {
 };
 
 export function BackupSettingsPage() {
-  const { showError } = useUndoToast();
+  const { showError, showInfo } = useUndoToast();
+  const reminder = useBackupReminder();
+  const persistence = usePersistenceStatus();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [exporting, setExporting] = useState(false);
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
@@ -25,15 +37,8 @@ export function BackupSettingsPage() {
   async function handleExport() {
     setExporting(true);
     try {
-      const blob = await backupService.exportBackup();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = getBackupFilename();
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const outcome = await saveBackup();
+      if (outcome !== 'cancelled') showInfo('Sicherung erstellt.');
     } catch (error) {
       showError(`Export fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -82,10 +87,37 @@ export function BackupSettingsPage() {
 
       <div className="section-title">Export</div>
       <div className="card">
-        <p>Erstellt eine ZIP-Datei mit allen Inventardaten ({getBackupFilename()}).</p>
+        <p>
+          Erstellt eine ZIP-Datei mit allen Inventardaten ({getBackupFilename()}). Auf dem iPhone öffnet sich das
+          Teilen-Menü – mit „In Dateien sichern“ landet sie z. B. in iCloud Drive.
+        </p>
         <button type="button" className="button button--primary" onClick={handleExport} disabled={exporting}>
           {exporting ? 'Wird erstellt…' : 'Backup exportieren'}
         </button>
+        <p className="backup-meta">
+          Letzte Sicherung: {reminder.lastBackupAt === null ? 'noch keine' : formatDate(reminder.lastBackupAt)}
+        </p>
+      </div>
+
+      <div className="section-title">Datensicherheit</div>
+      <div className="card">
+        <div className="form-field">
+          <label htmlFor="backup-reminder">Erinnerung an Sicherung</label>
+          <select
+            id="backup-reminder"
+            value={reminder.reminderDays}
+            onChange={(e) => backupReminderStore.setReminderDays(Number(e.target.value))}
+          >
+            {REMINDER_OPTIONS.map((days) => (
+              <option key={days} value={days}>
+                {days === 0 ? 'Aus' : `Alle ${days} Tage`}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="backup-meta">
+          Speicher: {persistence ? PERSISTENCE_LABELS[persistence] : '…'}
+        </p>
       </div>
 
       <div className="section-title">Import</div>

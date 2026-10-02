@@ -4,6 +4,7 @@ import { useEnrichedItems } from '@/hooks/useEnrichedItems';
 import { ItemCard } from '@/components/ItemCard';
 import { useConsumptionForecasts } from '@/hooks/useConsumptionStats';
 import { formatDuration } from '@/utils/formatConsumption';
+import { BackupReminderCard } from '@/features/data-safety/BackupReminderCard';
 
 /** Items still above their minimum but forecast to run out within this many days. */
 export const RUNNING_OUT_DAYS = 14;
@@ -39,6 +40,8 @@ export function DashboardPage() {
   return (
     <div>
       <h1 className="page-title">Übersicht</h1>
+
+      <BackupReminderCard itemCount={totalItems} />
 
       <div className="dashboard-stat-grid">
         <div className="dashboard-stat">

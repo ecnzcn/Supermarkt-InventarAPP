@@ -803,3 +803,52 @@ textarea {
 .consumption__hint:first-child {
   margin-top: 0;
 }
+
+/* Backup reminder (dashboard) */
+.reminder-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.reminder-card__text {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.reminder-card__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.reminder-card__subtitle {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.reminder-card__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.reminder-card__button {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px;
+}
+
+.backup-meta {
+  margin: var(--space-3) 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}

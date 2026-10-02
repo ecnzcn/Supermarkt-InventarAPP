@@ -44,6 +44,16 @@
 - [x] Menge und Mindestbestand: Zahlenblock, nur Zahlen (optional mit Komma) möglich
 - [x] Einheit als Auswahlliste (Stk., Packungen, Flaschen, kg, l, …) plus „Eigene Einheit …“
 
+## v1.3.0 – Datensicherheit
+
+- [x] Beim Start wird dauerhafter Speicher angefragt (`navigator.storage.persist()`),
+      Status sichtbar unter Einstellungen → Sicherung
+- [x] Backup-Export über das iOS-Teilen-Menü („In Dateien sichern“ → iCloud Drive),
+      Fallback Download
+- [x] Erinnerung auf dem Dashboard, wenn die letzte Sicherung älter als das gewählte
+      Intervall ist (Aus / 7 / 14 / 30 Tage, Standard 14), „Später“ pausiert 3 Tage
+- Erinnerungsstatus ist eine Geräte-Einstellung (localStorage), kein Teil der Datenbank
+
 ## Bewusst nicht in v1.0
 
 Benutzerkonten, Cloud-Synchronisation, Multi-User, Barcode-Scanning, OCR/Rechnungs-
